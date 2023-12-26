@@ -16,6 +16,7 @@
 # Last modified 2023-12-06 by Moreno Marzolla
 
 EXE:=circles
+OMP_EXE:=omp-$(EXE)
 CFLAGS=-std=c99 -Wall -Wpedantic
 LDLIBS+=-lm
 
@@ -25,11 +26,13 @@ $(EXE).movie: CFLAGS+=-DMOVIE
 $(EXE).movie: $(EXE).c
 	$(CC) $(CFLAGS) $< -o $@ $(LDLIBS)
 
+$(OMP_EXE): $(OMP_EXE).c
+	$(CC) $(OMP_EXE).c -fopenmp $(CFLAGS) $(LDLIBS) -o $(OMP_EXE)
+
 movie: $(EXE).movie
 	./$(EXE).movie 200 500
 	for f in *.gp; do echo "Processing $$f"; gnuplot "$$f"; done
 	ffmpeg -y -i "circles-%05d.png" -vcodec mpeg4 circles.avi
 
 clean:
-	\rm -f $(EXE) $(EXE).movie *.o *~ *.gp *.png *.avi
-
+	\rm -f $(EXE) $(EXE).movie *.o *~ *.gp *.png *.avi $(OMP_EXE)
