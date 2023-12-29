@@ -1,3 +1,6 @@
 *.png
 *.pg
 *.avi
+omp-circles
+circles
+mpi-circles

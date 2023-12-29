@@ -129,7 +129,7 @@ void reset_displacements( void )
 int compute_forces( void )
 {
     int n_intersections = 0;
-    #pragma omp parallel for reduction(+:n_intersections) collapse(2) default(none) shared(ncircles, circles, EPSILON, K)
+    #pragma omp parallel for reduction(+:n_intersections) default(none) shared(ncircles, circles, EPSILON, K)
     for (int i=0; i<ncircles; i++) {
         for (int j=i+1; j<ncircles; j++) {
             const float deltax = circles[j].x - circles[i].x;
