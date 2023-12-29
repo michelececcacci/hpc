@@ -17,6 +17,7 @@
 
 EXE:=circles
 OMP_EXE:=omp-$(EXE)
+MPI_EXE:=mpi-$(EXE)
 CFLAGS=-std=c99 -Wall -Wpedantic
 LDLIBS+=-lm
 
@@ -28,6 +29,9 @@ $(EXE).movie: $(EXE).c
 
 $(OMP_EXE): $(OMP_EXE).c
 	$(CC) $(OMP_EXE).c -fopenmp $(CFLAGS) $(LDLIBS) -o $(OMP_EXE)
+
+$(MPI_EXE): $(MPI_EXE).c
+	mpicc $(MPI_EXE).c $(CFLAGS) $(LDLIBS) -o $(MPI_EXE)
 
 movie: $(EXE).movie
 	./$(EXE).movie 200 500
