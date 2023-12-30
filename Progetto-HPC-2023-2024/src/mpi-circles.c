@@ -68,7 +68,6 @@ and then assembled to produce the movie `circles.avi`:
 typedef struct {
     float x, y;   /* coordinates of center */
     float r;      /* radius */
-    float dx, dy; /* displacements due to interactions with other circles */
 } circle_t;
 
 /* These constants can be replaced with #define's if necessary */
@@ -83,6 +82,10 @@ const float K = 1.5;
 
 int ncircles;
 circle_t *circles = NULL;
+float *circles_dx = NULL;
+float *circles_dy = NULL;
+float *recvbuf_dx = NULL;
+float *recvbuf_dy = NULL;
 
 /**
  * Return a random float in [a, b]
@@ -90,6 +93,16 @@ circle_t *circles = NULL;
 float randab(float a, float b)
 {
     return a + (((float)rand())/RAND_MAX) * (b-a);
+}
+
+/**
+ * Set all displacements to zero.
+ */
+void reset_displacements( void )
+{
+    for (int i=0; i<ncircles; i++) {
+        circles_dx[i] = circles_dy[i] = 0.0;
+    }
 }
 
 /**
@@ -103,24 +116,23 @@ void init_circles(int n)
     assert(circles == NULL);
     ncircles = n;
     circles = (circle_t*)malloc(n * sizeof(*circles));
+    circles_dx = (float*)malloc(n * sizeof(float));
+    circles_dy = (float*)malloc(n * sizeof(float));
+    recvbuf_dx = malloc(n*sizeof(float));
+    recvbuf_dy = malloc(n*sizeof(float));
+    assert(recvbuf_dx != NULL);
+    assert(recvbuf_dy != NULL);
     assert(circles != NULL);
+    assert(circles_dx != NULL);
+    assert(circles_dy != NULL);
     for (int i=0; i<n; i++) {
         circles[i].x = randab(XMIN, XMAX);
         circles[i].y = randab(YMIN, YMAX);
         circles[i].r = randab(RMIN, RMAX);
-        circles[i].dx = circles[i].dy = 0.0;
     }
+    reset_displacements();
 }
 
-/**
- * Set all displacements to zero.
- */
-void reset_displacements( void )
-{
-    for (int i=0; i<ncircles; i++) {
-        circles[i].dx = circles[i].dy = 0.0;
-    }
-}
 
 /**
  * Compute the force acting on each circle; returns the number of
@@ -133,11 +145,11 @@ int compute_forces( void )
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 
-    const int my_start = ncircles * my_rank /comm_size;
-    const int my_end = ncircles * (my_rank+1)/comm_size;
+    const int my_start = ncircles * my_rank / comm_size;
+    const int my_end = ncircles * (my_rank+1) / comm_size;
     int n_intersections = 0;
-    for (int i= my_start; i< my_end; i++) {
-        for (int j=i+1; j<ncircles; j++) {
+    for (int i= my_start; i < my_end; i++) {
+        for (int j=i+1; j < ncircles; j++) {
             const float deltax = circles[j].x - circles[i].x;
             const float deltay = circles[j].y - circles[i].y;
             /* hypotf(x,y) computes sqrtf(x*x + y*y) avoiding
@@ -153,10 +165,10 @@ int compute_forces( void )
                 // avoid division by zero
                 const float overlap_x = overlap / (dist + EPSILON) * deltax;
                 const float overlap_y = overlap / (dist + EPSILON) * deltay;
-                circles[i].dx -= overlap_x / K;
-                circles[i].dy -= overlap_y / K;
-                circles[j].dx += overlap_x / K;
-                circles[j].dy += overlap_y / K;
+                circles_dx[i] -= overlap_x / K;
+                circles_dy[i] -= overlap_y / K;
+                circles_dx[j] += overlap_x / K;
+                circles_dy[j] += overlap_y / K;
             }
         }
     }
@@ -170,8 +182,8 @@ int compute_forces( void )
 void move_circles( void )
 {
     for (int i=0; i<ncircles; i++) {
-        circles[i].x += circles[i].dx;
-        circles[i].y += circles[i].dy;
+        circles[i].x += recvbuf_dx[i];
+        circles[i].y += recvbuf_dy[i];
     }
 }
 
@@ -214,9 +226,6 @@ int main( int argc, char* argv[] )
     MPI_Init(&argc, &argv);
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Datatype circle_type;
-    MPI_Type_contiguous(5, MPI_FLOAT, &circle_type);
-    MPI_Type_commit(&circle_type);
 
     if ( argc > 3 ) {
         fprintf(stderr, "Usage: %s [ncircles [iterations]]\n", argv[0]);
@@ -230,7 +239,6 @@ int main( int argc, char* argv[] )
     if (argc > 2) {
         iterations = atoi(argv[2]);
     }
-
     init_circles(n);
     const double tstart_prog = hpc_gettime();
 #ifdef MOVIE
@@ -240,13 +248,17 @@ int main( int argc, char* argv[] )
         int overlaps = 0;
         const double tstart_iter = hpc_gettime();
         reset_displacements();
+        MPI_Bcast(circles_dx, ncircles, MPI_FLOAT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(circles_dy, ncircles, MPI_FLOAT, 0, MPI_COMM_WORLD);
         const int n_overlaps = compute_forces();
+        MPI_Reduce(&n_overlaps, &overlaps, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(circles_dx, recvbuf_dx, ncircles, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(circles_dy, recvbuf_dy, ncircles, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
         move_circles();
         const double elapsed_iter = hpc_gettime() - tstart_iter;
 #ifdef MOVIE
         dump_circles(it+1);
 #endif
-        MPI_Reduce(&n_overlaps, &overlaps, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
         if (my_rank == 0) {
             printf("Iteration %d of %d, %d overlaps (%f s)\n", it+1, iterations, overlaps, elapsed_iter);
         }
