@@ -67,7 +67,6 @@ and then assembled to produce the movie `circles.avi`:
 typedef struct {
     float x, y;   /* coordinates of center */
     float r;      /* radius */
-    float dx, dy; /* displacements due to interactions with other circles */
 } circle_t;
 
 /* These constants can be replaced with #define's if necessary */
@@ -82,6 +81,8 @@ const float K = 1.5;
 
 int ncircles;
 circle_t *circles = NULL;
+float *circles_dx = NULL;
+float *circles_dy = NULL;
 
 /**
  * Return a random float in [a, b]
@@ -89,6 +90,16 @@ circle_t *circles = NULL;
 float randab(float a, float b)
 {
     return a + (((float)rand())/RAND_MAX) * (b-a);
+}
+
+/**
+ * Set all displacements to zero.
+ */
+void reset_displacements( void )
+{
+    for (int i=0; i<ncircles; i++) {
+        circles_dx[i]= circles_dy[i] = 0.0;
+    }
 }
 
 /**
@@ -102,24 +113,17 @@ void init_circles(int n)
     assert(circles == NULL);
     ncircles = n;
     circles = (circle_t*)malloc(n * sizeof(*circles));
+    circles_dx = (float*)malloc(n*sizeof(float));
+    circles_dy = (float*)malloc(n*sizeof(float));
     assert(circles != NULL);
     for (int i=0; i<n; i++) {
         circles[i].x = randab(XMIN, XMAX);
         circles[i].y = randab(YMIN, YMAX);
         circles[i].r = randab(RMIN, RMAX);
-        circles[i].dx = circles[i].dy = 0.0;
     }
+    reset_displacements();
 }
 
-/**
- * Set all displacements to zero.
- */
-void reset_displacements( void )
-{
-    for (int i=0; i<ncircles; i++) {
-        circles[i].dx = circles[i].dy = 0.0;
-    }
-}
 
 /**
  * Compute the force acting on each circle; returns the number of
@@ -129,7 +133,8 @@ void reset_displacements( void )
 int compute_forces( void )
 {
     int n_intersections = 0;
-    #pragma omp parallel for reduction(+:n_intersections) default(none) shared(ncircles, circles, EPSILON, K)
+    #pragma omp parallel for default(none) shared(ncircles, circles, EPSILON, K) \
+    reduction(+:n_intersections) reduction(+:circles_dx[:ncircles]) reduction(+:circles_dy[:ncircles]) 
     for (int i=0; i<ncircles; i++) {
         for (int j=i+1; j<ncircles; j++) {
             const float deltax = circles[j].x - circles[i].x;
@@ -137,7 +142,7 @@ int compute_forces( void )
             /* hypotf(x,y) computes sqrtf(x*x + y*y) avoiding
                overflow. This function is defined in <math.h>, and
                should be available also on CUDA. In case of troubles,
-               it is ok to use sqrtf(x*x + y*y) instead. */
+                it is ok to use sqrtf(x*x + y*y) instead. */
             const float dist = hypotf(deltax, deltay);
             const float Rsum = circles[i].r + circles[j].r;
             if (dist < Rsum - EPSILON) {
@@ -147,10 +152,10 @@ int compute_forces( void )
                 // avoid division by zero
                 const float overlap_x = overlap / (dist + EPSILON) * deltax;
                 const float overlap_y = overlap / (dist + EPSILON) * deltay;
-                circles[i].dx -= overlap_x / K;
-                circles[i].dy -= overlap_y / K;
-                circles[j].dx += overlap_x / K;
-                circles[j].dy += overlap_y / K;
+                circles_dx[i] -= overlap_x / K;
+                circles_dy[i] -= overlap_y / K;
+                circles_dx[j] += overlap_x / K;
+                circles_dy[j] += overlap_y / K;
             }
         }
     }
@@ -164,8 +169,8 @@ int compute_forces( void )
 void move_circles( void )
 {
     for (int i=0; i<ncircles; i++) {
-        circles[i].x += circles[i].dx;
-        circles[i].y += circles[i].dy;
+        circles[i].x += circles_dx[i];
+        circles[i].y += circles_dy[i];
     }
 }
 
