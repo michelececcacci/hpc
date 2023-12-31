@@ -242,11 +242,14 @@ int main( int argc, char* argv[] )
     if (argc > 2) {
         iterations = atoi(argv[2]);
     }
-    init_circles(n);
-    const double tstart_prog = hpc_gettime();
-#ifdef MOVIE
-    dump_circles(0);
-#endif
+    double tstart_prog;
+    if (my_rank == 0) {
+	    init_circles(n);
+	    tstart_prog = hpc_gettime();
+	#ifdef MOVIE
+	    dump_circles(0);
+	#endif
+    }
     for (int it=0; it<iterations; it++) {
         int overlaps = 0;
         const double tstart_iter = hpc_gettime();
@@ -258,19 +261,23 @@ int main( int argc, char* argv[] )
         MPI_Reduce(&n_overlaps, &overlaps, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
         MPI_Reduce(circles_dx, recvbuf_dx, ncircles, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
         MPI_Reduce(circles_dy, recvbuf_dy, ncircles, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
-        move_circles();
-        const double elapsed_iter = hpc_gettime() - tstart_iter;
-#ifdef MOVIE
-        dump_circles(it+1);
-#endif
-        if (my_rank == 0) {
-            printf("Iteration %d of %d, %d overlaps (%f s)\n", it+1, iterations, overlaps, elapsed_iter);
-        }
+	if (my_rank == 0) {
+		move_circles();
+		const double elapsed_iter = hpc_gettime() - tstart_iter;
+        printf("Iteration %d of %d, %d overlaps (%f s)\n", it+1, iterations, n_overlaps, elapsed_iter);
+		#ifdef MOVIE
+            dump_circles(it+1);
+		#endif
+        const double elapsed_prog = hpc_gettime() - tstart_prog;
+        printf("Elapsed time: %f\n", elapsed_prog);
+	}
     }
-    const double elapsed_prog = hpc_gettime() - tstart_prog;
-    printf("Elapsed time: %f\n", elapsed_prog);
 
     free(circles);
+    free(recvbuf_dx);
+    free(recvbuf_dy);
+    free(circles_dx);
+    free(circles_dy);
     MPI_Finalize();
 
     return EXIT_SUCCESS;
