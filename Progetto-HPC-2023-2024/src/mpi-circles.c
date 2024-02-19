@@ -217,6 +217,10 @@ void dump_circles( int iterno )
 }
 #endif
 
+void assertNoErrors(int res) {
+    assert(res == 0);
+}
+
 int main( int argc, char* argv[] )
 {
     int n = 10000;
@@ -227,8 +231,8 @@ int main( int argc, char* argv[] )
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Datatype MPI_CIRCLES;
-    MPI_Type_contiguous(3, MPI_FLOAT, &MPI_CIRCLES);
-    MPI_Type_commit(&MPI_CIRCLES);
+    assertNoErrors(MPI_Type_contiguous(3, MPI_FLOAT, &MPI_CIRCLES));
+    assertNoErrors(MPI_Type_commit(&MPI_CIRCLES));
 
     if ( argc > 3 ) {
         fprintf(stderr, "Usage: %s [ncircles [iterations]]\n", argv[0]);
@@ -254,13 +258,13 @@ int main( int argc, char* argv[] )
         int overlaps = 0;
         const double tstart_iter = hpc_gettime();
         reset_displacements();
-        MPI_Bcast(circles_dx, ncircles, MPI_FLOAT, 0, MPI_COMM_WORLD);
-        MPI_Bcast(circles_dy, ncircles, MPI_FLOAT, 0, MPI_COMM_WORLD);
-        MPI_Bcast(circles, ncircles, MPI_CIRCLES, 0, MPI_COMM_WORLD);
+        assertNoErrors(MPI_Bcast(circles_dx, ncircles, MPI_FLOAT, 0, MPI_COMM_WORLD));
+        assertNoErrors(MPI_Bcast(circles_dy, ncircles, MPI_FLOAT, 0, MPI_COMM_WORLD));
+        assertNoErrors(MPI_Bcast(circles, ncircles, MPI_CIRCLES, 0, MPI_COMM_WORLD));
         const int n_overlaps = compute_forces();
-        MPI_Reduce(&n_overlaps, &overlaps, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-        MPI_Reduce(circles_dx, recvbuf_dx, ncircles, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
-        MPI_Reduce(circles_dy, recvbuf_dy, ncircles, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+        assertNoErrors(MPI_Reduce(&n_overlaps, &overlaps, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD));
+        assertNoErrors(MPI_Reduce(circles_dx, recvbuf_dx, ncircles, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD));
+        assertNoErrors(MPI_Reduce(circles_dy, recvbuf_dy, ncircles, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD));
 	if (my_rank == 0) {
 		move_circles();
 		const double elapsed_iter = hpc_gettime() - tstart_iter;
