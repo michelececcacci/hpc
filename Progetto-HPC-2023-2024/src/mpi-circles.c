@@ -228,7 +228,9 @@ int main( int argc, char* argv[] )
     MPI_Status status;
 
     MPI_Init(&argc, &argv);
-    int my_rank;
+
+    int my_rank, comm_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Datatype MPI_CIRCLES;
     assertNoErrors(MPI_Type_contiguous(3, MPI_FLOAT, &MPI_CIRCLES));
@@ -247,34 +249,37 @@ int main( int argc, char* argv[] )
         iterations = atoi(argv[2]);
     }
     double tstart_prog;
-    if (my_rank == 0) {
+    // if (my_rank == 0) {
 	    init_circles(n);
 	    tstart_prog = hpc_gettime();
 	#ifdef MOVIE
 	    dump_circles(0);
 	#endif
-    }
+    // }
+    MPI_Bcast(&ncircles, 1, MPI_INT, 0, MPI_COMM_WORLD);
     for (int it=0; it<iterations; it++) {
         int overlaps = 0;
         const double tstart_iter = hpc_gettime();
-        reset_displacements();
+        if (my_rank == 0) {
+            reset_displacements();
+        }
         assertNoErrors(MPI_Bcast(circles_dx, ncircles, MPI_FLOAT, 0, MPI_COMM_WORLD));
         assertNoErrors(MPI_Bcast(circles_dy, ncircles, MPI_FLOAT, 0, MPI_COMM_WORLD));
         assertNoErrors(MPI_Bcast(circles, ncircles, MPI_CIRCLES, 0, MPI_COMM_WORLD));
-        const int n_overlaps = compute_forces();
+        int n_overlaps = compute_forces();
         assertNoErrors(MPI_Reduce(&n_overlaps, &overlaps, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD));
-        assertNoErrors(MPI_Reduce(circles_dx, recvbuf_dx, ncircles, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD));
+        assertNoErrors(MPI_Reduce(circles_dx, recvbuf_dx, ncircles, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD)); // only using 1 of these it stops at 10th iteration (out of 20) 
         assertNoErrors(MPI_Reduce(circles_dy, recvbuf_dy, ncircles, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD));
-	if (my_rank == 0) {
-		move_circles();
-		const double elapsed_iter = hpc_gettime() - tstart_iter;
-        printf("Iteration %d of %d, %d overlaps (%f s)\n", it+1, iterations, n_overlaps, elapsed_iter);
-		#ifdef MOVIE
-            dump_circles(it+1);
-		#endif
-        const double elapsed_prog = hpc_gettime() - tstart_prog;
-        printf("Elapsed time: %f\n", elapsed_prog);
-	}
+        if (my_rank == 0) {
+            move_circles();
+            const double elapsed_iter = hpc_gettime() - tstart_iter;
+            printf("Iteration %d of %d, %d overlaps (%f s)\n", it+1, iterations, overlaps, elapsed_iter);
+            #ifdef MOVIE
+                dump_circles(it+1);
+            #endif
+            const double elapsed_prog = hpc_gettime() - tstart_prog;
+            printf("Elapsed time: %f\n", elapsed_prog);
+        }
     }
 
     free(circles);
