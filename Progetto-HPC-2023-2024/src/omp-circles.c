@@ -134,7 +134,7 @@ int compute_forces( void )
 {
     int n_intersections = 0;
     #pragma omp parallel for default(none) shared(ncircles, circles, EPSILON, K) \
-    reduction(+:n_intersections) reduction(+:circles_dx[:ncircles]) reduction(+:circles_dy[:ncircles]) 
+    reduction(+:n_intersections) reduction(+:circles_dx[:ncircles]) reduction(+:circles_dy[:ncircles])  schedule(dynamic)
     for (int i=0; i<ncircles; i++) {
         for (int j=i+1; j<ncircles; j++) {
             const float deltax = circles[j].x - circles[i].x;
