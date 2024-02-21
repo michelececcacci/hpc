@@ -29,7 +29,7 @@ fi
 
 echo -n "p\t"
 
-for ((t=i; i <= REP; i++)); do
+for ((t=1; t <= REP; t++)); do
 echo -n "t{$t}\t"
 done
 echo ""
