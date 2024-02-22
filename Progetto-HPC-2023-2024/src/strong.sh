@@ -35,7 +35,7 @@ echo ""
 
 CORES=`cat /proc/cpuinfo | grep processor | wc -l` # number of cores
 
-if  echo "$PROG" | grep -Eq 'omp' ; then
+if  `echo "$PROG" | grep -Eq 'omp'` ; then
     TYPE=0;
 else
     TYPE=1;
