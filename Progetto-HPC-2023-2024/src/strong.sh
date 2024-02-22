@@ -33,7 +33,7 @@ for t in `seq $REP`; do
 echo -n "t{$t}\t"
 echo ""
 
-CORES=$(cat /proc/cpuinfo | grep processor | wc -l) # number of cores
+CORES=`cat /proc/cpuinfo | grep processor | wc -l` # number of cores
 
 if  echo "$PROG" | grep -Eq 'omp' ; then
     TYPE=0;
@@ -44,14 +44,14 @@ fi
 if [ "$TYPE" -eq 0 ]; then
     for t in `seq $CORES`; do
         echo -n "${p}\t"
-        for rep in {1..5}; do
+        for rep in `seq $REP`; do
             EXEC_TIME="$( OMP_NUM_THREADS=$p "./"$PROG $PROB_SIZE $IT  | grep "Elapsed time:" | sed 's/Elapsed time: //' )"
             echo -n "${EXEC_TIME}\t"
         done
         echo ""
     done
 else
-    for rep in 1..$REP; do
+    for rep in `seq $REP`; do
         EXEC_TIME="$( "./"$PROG $PROB_SIZE $IT | grep "Elapsed time:" | sed 's/Elapsed time: //' )"
         echo -n "${EXEC_TIME}"
     done

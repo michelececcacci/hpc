@@ -21,6 +21,7 @@
 
 # Ultimo aggiornamento 2023-01-31
 # Moreno Marzolla (moreno.marzolla@unibo.it)
+# Marco Galeri (marco.galeri@studio.unibo.it)
 
 PROG=$1
 REP=$2
@@ -39,24 +40,24 @@ fi
 
 echo -n "p\t"
 
-for t in seq $REP; do
+for t in `seq $REP`; do
 echo -n "t$t\t"
 done
 echo ""
 
 CORES=`cat /proc/cpuinfo | grep processor | wc -l` # number of cores
 
-for p in seq $CORES; do
+for p in `seq $CORES`; do
     echo -n "$p\t"
     # Il comando bc non è in grado di valutare direttamente una radice
     # cubica, che dobbiamo quindi calcolare mediante logaritmo ed
     # esponenziale. L'espressione ($N0 * e(l($p)/2)) calcola
     # $N0*($p^(1/2))
     
-    PROB_SIZE=echo "$N0 * e(l($p)/2)" | bc -l -q
-    IT_SIZE=echo "$IT * $p" | bc -l -q
+    PROB_SIZE=`echo "$N0 * e(l($p)/2)" | bc -l -q`
+    IT_SIZE=`echo "$IT * $p" | bc -l -q`
 
-    for rep in seq $REP; do
+    for rep in `seq $REP`; do
         if [ "$TYPE" = 1 ]; then
         EXEC_TIME="$( OMP_NUM_THREADS=$p "./"$PROG $PROB_SIZE $IT | grep "Elapsed time:" | sed 's/Elapsed time: //' )"
         else
