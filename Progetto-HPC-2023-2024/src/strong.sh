@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Questo script richiede 4 parametri per essere eseguito:
 # 1 - il nome del programma da eseguire
@@ -29,9 +29,8 @@ fi
 
 echo -n "p\t"
 
-for ((t=1; t <= REP; t++)); do
+for t in `seq $REP`; do
 echo -n "t{$t}\t"
-done
 echo ""
 
 CORES=$(cat /proc/cpuinfo | grep processor | wc -l) # number of cores
@@ -43,7 +42,7 @@ else
 fi
 
 if [ "$TYPE" -eq 0 ]; then
-    for ((p=1; p <= CORES; p++)); do
+    for t in `seq $CORES`; do
         echo -n "${p}\t"
         for rep in {1..5}; do
             EXEC_TIME="$( OMP_NUM_THREADS=$p "./"$PROG $PROB_SIZE $IT  | grep "Elapsed time:" | sed 's/Elapsed time: //' )"
@@ -57,3 +56,4 @@ else
         echo -n "${EXEC_TIME}"
     done
 fi
+done;
