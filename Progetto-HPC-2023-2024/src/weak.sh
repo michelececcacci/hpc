@@ -38,17 +38,17 @@ if [ ! -f "$PROG" ]; then
     exit 1
 fi
 
-echo -n "p\t"
+echo -n "p,"
 
 for t in `seq $REP`; do
-echo -n "t$t\t"
+echo -n "t$t,"
 done
 echo ""
 
 CORES=`cat /proc/cpuinfo | grep processor | wc -l` # number of cores
 
 for p in `seq $CORES`; do
-    echo -n "$p\t"
+    echo -n "$p,"
     # Il comando bc non è in grado di valutare direttamente una radice
     # cubica, che dobbiamo quindi calcolare mediante logaritmo ed
     # esponenziale. L'espressione ($N0 * e(l($p)/2)) calcola
@@ -63,7 +63,7 @@ for p in `seq $CORES`; do
         else
         EXEC_TIME="$( OMP_NUM_THREADS=$p "./"$PROG $N0 $IT_SIZE | grep "Elapsed time:" | sed 's/Elapsed time: //' )"
         fi
-        echo -n "${EXEC_TIME}\t"
+        echo -n "${EXEC_TIME},"
     done
     echo ""
 done
