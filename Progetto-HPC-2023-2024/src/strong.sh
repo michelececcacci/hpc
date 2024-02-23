@@ -31,6 +31,8 @@ echo -n "p,"
 
 for t in `seq $REP`; do
 echo -n "t$t,"
+done
+echo ""
 
 CORES=`cat /proc/cpuinfo | grep processor | wc -l` # number of cores
 
@@ -42,7 +44,7 @@ fi
 
 if [ "$TYPE" -eq 0 ]; then
     for t in `seq $CORES`; do
-        echo -n "${p},"
+        echo -n "$t,"
         for rep in `seq $REP`; do
             EXEC_TIME="$( OMP_NUM_THREADS=$p "./"$PROG $PROB_SIZE $IT  | grep "Elapsed time:" | sed 's/Elapsed time: //' )"
             echo -n "${EXEC_TIME},"
@@ -51,8 +53,8 @@ if [ "$TYPE" -eq 0 ]; then
     done
 else
     for rep in `seq $REP`; do
-r       EXEC_TIME="$( "./"$PROG $PROB_SIZE $IT | grep "Elapsed time:" | sed 's/Elapsed time: //' )"
-        echo -n "${EXEC_TIME}"
+        EXEC_TIME="$( "./"$PROG $PROB_SIZE $IT | grep "Elapsed time:" | sed 's/Elapsed time: //' )"
+        echo -n "${EXEC_TIME},"
     done
 fi
 done;
