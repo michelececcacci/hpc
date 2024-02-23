@@ -57,4 +57,3 @@ else
         echo -n "${EXEC_TIME},"
     done
 fi
-done;
