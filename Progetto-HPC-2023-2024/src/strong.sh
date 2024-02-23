@@ -43,10 +43,10 @@ else
 fi
 
 if [ "$TYPE" -eq 0 ]; then
-    for t in `seq $CORES`; do
-        echo -n "$t,"
+    for b in `seq $CORES`; do
+        echo -n "$b,"
         for rep in `seq $REP`; do
-            EXEC_TIME="$( OMP_NUM_THREADS=$p "./"$PROG $PROB_SIZE $IT  | grep "Elapsed time:" | sed 's/Elapsed time: //' )"
+            EXEC_TIME="$( OMP_NUM_THREADS=$b "./"$PROG $PROB_SIZE $IT  | grep "Elapsed time:" | sed 's/Elapsed time: //' )"
             echo -n "${EXEC_TIME},"
         done
         echo ""
