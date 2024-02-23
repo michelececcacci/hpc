@@ -52,8 +52,12 @@ if [ "$TYPE" -eq 0 ]; then
         echo ""
     done
 else
-    for rep in `seq $REP`; do
-        EXEC_TIME="$( "./"$PROG $PROB_SIZE $IT | grep "Elapsed time:" | sed 's/Elapsed time: //' )"
-        echo -n "${EXEC_TIME},"
+    for b in `seq $CORES`; do
+        echo -n "$b,"
+        for rep in `seq $REP`; do
+            EXEC_TIME="$( mpirun -n $b $PROG $PROB_SIZE $IT | grep "Elapsed time:" | sed 's/Elapsed time: //' )"
+            echo -n "${EXEC_TIME},"
+        done
+        echo ""
     done
 fi

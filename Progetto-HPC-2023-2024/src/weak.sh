@@ -25,7 +25,6 @@
 
 PROG=$1
 REP=$2
-TYPE=$3
 N0=$4   # base problem size
 IT=$5   #iterations
 
@@ -46,6 +45,11 @@ done
 echo ""
 
 CORES=`cat /proc/cpuinfo | grep processor | wc -l` # number of cores
+if  `echo "$PROG" | grep -Eq 'omp'` ; then
+    TYPE=0;
+else
+    TYPE=1;
+fi
 
 for p in `seq $CORES`; do
     echo -n "$p,"
@@ -61,7 +65,7 @@ for p in `seq $CORES`; do
         if [ "$TYPE" = 1 ]; then
         EXEC_TIME="$( OMP_NUM_THREADS=$p "./"$PROG $PROB_SIZE $IT | grep "Elapsed time:" | sed 's/Elapsed time: //' )"
         else
-        EXEC_TIME="$( OMP_NUM_THREADS=$p "./"$PROG $N0 $IT_SIZE | grep "Elapsed time:" | sed 's/Elapsed time: //' )"
+        EXEC_TIME="$( mpirun -n $p "./"$PROG $N0 $IT_SIZE | grep "Elapsed time:" | sed 's/Elapsed time: //' )"
         fi
         echo -n "${EXEC_TIME},"
     done

@@ -225,7 +225,6 @@ int main( int argc, char* argv[] )
 {
     int n = 10000;
     int iterations = 20;
-    MPI_Status status;
 
     MPI_Init(&argc, &argv);
 
@@ -275,11 +274,13 @@ int main( int argc, char* argv[] )
             #ifdef MOVIE
                 dump_circles(it+1);
             #endif
-            const double elapsed_prog = hpc_gettime() - tstart_prog;
-            printf("Elapsed time: %f\n", elapsed_prog);
-        }
+            };
     }
 
+    if (my_rank == 0) {
+        const double elapsed_prog = hpc_gettime() - tstart_prog;
+        printf("Elapsed time: %f\n", elapsed_prog);
+    }
     free(circles);
     free(recvbuf_dx);
     free(recvbuf_dy);
