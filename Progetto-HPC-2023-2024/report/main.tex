@@ -22,6 +22,10 @@ Dato che il workload è molto sbilanciato e le performance non erano ottimali, h
 Ho usato il costrutto openMP parallel form, e ho definito le variabili con default(none), in maniera da dover pensare al significato di ogni singola variabile e non lasciare ambiguità nel mio codice. Ho definito variabili che non vengono modificate come shared per evitare copie inutili.
 Inoltre ho sempre usato  reduce per computare le somme sia degli offset che della variabile che rappresenta il numero di overlap.
 Questo mi ha consentito di evitare race condition, e di rendere il mio codice più semplice senza impattare in alcun modo la performance.
+\newline
+\includegraphics[scale=0.5]{images/omp_speedup.png}
+\includegraphics[scale=0.5]{images/omp_strong.png}
+La ragione per cui la strong scaling efficency diminuisce nella dodicesima iterazione è che il thread probabilmente viene usato dal sistema operativo.
 
 \section*{Versione MPI}
 Usando \textbf{MPI}\cite{mpi}, dato che ogni processo ha bisogno di ricevere un' array aggiornato con tutte le informazioni rilevanti ai cerchi, 
@@ -29,14 +33,18 @@ ho dovuto definire un nuovo data type circle, che ho potuto usare per inviare di
 Questo mi consente di ridurre il numero di  \textbf{MPI\_Bcast} \cite{mpi_bcast} necessarie ad ogni iterazione. Dato che a ogni processo servono le
 informazioni presenti in tutto l' array, e non solo una porzione, ho usato \textbf{MPI\_Bcast}\cite{mpi_bcast} per facilitare l' invio e non duplicare lavoro,
 come sarebbe successo se avessi scelto di usare \textbf{MPI\_send} \cite{mpi_send} \textbf{MPI\_recv} \cite{mpi_recv}. 
-Dopo aver calcolato i nuovi displacement sull'asse x e y, ho usato MPI\_reduce per agevolare le operazioni di somma. 
-In questo caso ho preferito codice piu semplice al definire una operazione di reduce custom, 
+Dopo aver calcolato i nuovi displacement sull'asse x e y, ho usato \textbf{MPI\_reduce} \cite{mpi_reduce} per agevolare le operazioni di somma.
+In questo caso ho preferito codice piu semplice al definire una operazione di reduce custom,
 che permette efficienza migliore rispetto all' usare direttamente primitive di livello più basso.
-
+\newline
+\includegraphics[scale=0.5]{images/mpi_speedup.png}
+\includegraphics[scale=0.5]{images/mpi_strong.png}
+\includegraphics[scale=0.5]{images/mpi_weak.png}
+La ragione per cui la strong scaling efficency diminuisce nella dodicesima iterazione è che il thread probabilmente viene usato dal sistema operativo.
 \section*{Conclusioni}
-La differenza principale tra il programma MPI e il programma OpenMP è la mancanza di dynamic scheduling nella versione MPI. 
+La differenza principale tra il programma MPI e il programma OpenMP è la mancanza di dynamic scheduling nella versione MPI.
 Questo si traduce in performance peggiori nella versione MPI, dato che il workload è sbilanciato.
-Per ottimizzare meglio il programma, si potrebbe cercare di rimuovere la loop-carried dependency, o approssimare un'euristica per cui il workload è meglio bilanciato. 
+Per ottimizzare meglio il programma, si potrebbe cercare di rimuovere la loop-carried dependency, o approssimare un'euristica per cui il workload è meglio bilanciato.
 Un'altra possibile ottimizzazione è aumentare la cache locality iterando sui displacement x e y separatamente.
 Questo consente al programma di dover tenere nella cache solo il displacement corrente, effettivamente raddoppiando il numero di displacement nella cache.
 Ho inoltre notato che il numero di intersezioni non sono esattamente uguali tra versione parallellizzata e seriale, ma differiscono di circa lo 0.5\% alla ventesima iterazione. Dopo una sessione di debugging,
