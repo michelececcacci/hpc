@@ -62,7 +62,7 @@ for p in `seq $CORES`; do
     IT_SIZE=`echo "$IT * $p" | bc -l -q`
 
     for rep in `seq $REP`; do
-        if [ "$TYPE" = 1 ]; then
+        if [ "$TYPE" -eq "0" ]; then
         EXEC_TIME="$( OMP_NUM_THREADS=$p "./"$PROG $PROB_SIZE $IT | grep "Elapsed time:" | sed 's/Elapsed time: //' )"
         else
         EXEC_TIME="$( mpirun -n $p "./"$PROG $N0 $IT_SIZE | grep "Elapsed time:" | sed 's/Elapsed time: //' )"
