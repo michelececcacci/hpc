@@ -25,8 +25,8 @@
 
 PROG=$1
 REP=$2
-N0=$4   # base problem size
-IT=$5   #iterations
+N0=$3   # base problem size
+IT=$4   #iterations
 
 
 
