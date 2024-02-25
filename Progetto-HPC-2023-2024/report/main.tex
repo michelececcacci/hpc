@@ -25,7 +25,12 @@ Questo mi ha consentito di evitare race condition, e di rendere il mio codice pi
 \newline
 \includegraphics[scale=0.5]{images/omp_speedup.png}
 \includegraphics[scale=0.5]{images/omp_strong.png}
-La ragione per cui la strong scaling efficency diminuisce nella dodicesima iterazione è che il thread probabilmente viene usato dal sistema operativo.
+La ragione per cui lo speedup diminuisce nella dodicesima iterazione è che il thread probabilmente viene usato dal sistema operativo.
+\newline
+\newline
+\includegraphics[scale=0.5]{images/omp_weak.png}
+\newline
+Dato che il carico è bilanciato dinamicamente, le performance in weak scaling sono molto buone.
 
 \section*{Versione MPI}
 Usando \textbf{MPI}\cite{mpi}, dato che ogni processo ha bisogno di ricevere un' array aggiornato con tutte le informazioni rilevanti ai cerchi, 
