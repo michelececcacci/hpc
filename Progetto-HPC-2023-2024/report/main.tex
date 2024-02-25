@@ -1,40 +1,39 @@
-\documentclass[a4paper,12pt]{report}
-
-\usepackage{float}
+\documentclass[a4paper,12pt, twoside]{report}
 \usepackage{hyperref}
-\usepackage{amsmath}
-\usepackage{listings}
 \usepackage{graphicx}
+\usepackage[backend=biber, sorting=none, style=ieee]{biblatex}
+\addbibresource{library.bib}
 
 \begin{document}
 
 \title{Relazione progetto basi di dati}
 \author{Michele Ceccacci}
+\date{\today}
 
-\chapter*{Introduzione}
+\section*{Introduzione}
 Ho parallelizzato il programma circles.c usando openMP e MPI. Ho usato la funzionalita movie per verificare la correttezza di entrambe le implementazioni in maniera visuale. Inoltre ho cercato di vedere se il codice esempio (non parallelizzato) avesse un numero di overlap simili a ogni iterazione. Ho cercato di sfruttare la versione di MPI (che non ha race condition, dato che ogni processo ha le sue variabili) per cercare race condition nella versione OMP (dato che i thread condividono lo stesso address space di default). 
 L' approccio usato per entrambi gli elaborati è stato quello di cercare di ottenere codice corretto, e poi parallellizzarlo e guadagnare più performance possibile.
-\chapter{Versione OpenMP}
-Parallelizzato usando OpenMP.
-Ho deciso di estrarre i delta x e y nella struttura circle in array separati, così da poterli usare insieme alla primitiva OpenMP reduce, rendendo il codice piu chiaro.
-Dato che la loop-carried dependency nel loop interno non è rimovibile, non ho potuto fare uso di primitive come omp collapse, e ho deciso di mantenerla. 
-Ho parallellizzato solo il loop esterno, che non presenta nessuna loop-carried dependency. 
+\section*{Versione OpenMP}
+Parallelizzato usando \textbf{openMP} \cite{openMP}.
+Ho deciso di estrarre i delta x e y nella struttura circle in array separati, così da poterli usare insieme alla primitiva \textbf{OpenMP reduce} \cite{omp_reduce}, rendendo il codice piu chiaro.
+Dato che la loop-carried dependency nel loop interno non è rimovibile, non ho potuto fare uso di primitive come omp collapse, e ho deciso di mantenerla.
+Ho parallellizzato solo il loop esterno, che non presenta nessuna loop-carried dependency.
 Dato che il workload è molto sbilanciato e le performance non erano ottimali, ho poi deciso di usare dynamic scheduling.
-Ho usato il costrutto omp parallel for, e ho definito le variabili con default(none), in maniera da dover pensare al significato di ogni singola variabile e non lasciare ambiguità nel mio codice. Ho definito variabili che non vengono modificate come shared per evitare copie inutili. 
-Inoltre ho sempre usato reduce per computare le somme sia degli offset che della variabile che rappresenta il numero di overlap.
+Ho usato il costrutto openMP parallel form, e ho definito le variabili con default(none), in maniera da dover pensare al significato di ogni singola variabile e non lasciare ambiguità nel mio codice. Ho definito variabili che non vengono modificate come shared per evitare copie inutili.
+Inoltre ho sempre usato  reduce per computare le somme sia degli offset che della variabile che rappresenta il numero di overlap.
 Questo mi ha consentito di evitare race condition, e di rendere il mio codice più semplice senza impattare in alcun modo la performance.
 
-\section{Versione MPI}
-Usando MPI, dato che ogni processo ha bisogno di ricevere un' array aggiornato con tutte le informazioni rilevanti ai cerchi, 
+\section*{Versione MPI}
+Usando \textbf{MPI}\cite{mpi}, dato che ogni processo ha bisogno di ricevere un' array aggiornato con tutte le informazioni rilevanti ai cerchi, 
 ho dovuto definire un nuovo data type circle, che ho potuto usare per inviare direttamente le informazioni. 
-Questo mi consente di ridurre il numero di MPI\_Bcast necessarie ad ogni iterazione. Dato che a ogni processo servono le
-informazioni presenti in tutto l' array, e non solo una porzione, ho usato MPI\_Bcast per facilitare l' invio e non duplicare lavoro, 
-come sarebbe successo se avessi scelto di usare MPI\_send e MPI\_recv. 
+Questo mi consente di ridurre il numero di  \textbf{MPI\_Bcast} \cite{mpi_bcast} necessarie ad ogni iterazione. Dato che a ogni processo servono le
+informazioni presenti in tutto l' array, e non solo una porzione, ho usato \textbf{MPI\_Bcast}\cite{mpi_bcast} per facilitare l' invio e non duplicare lavoro,
+come sarebbe successo se avessi scelto di usare \textbf{MPI\_send} \cite{mpi_send} \textbf{MPI\_recv} \cite{mpi_recv}. 
 Dopo aver calcolato i nuovi displacement sull'asse x e y, ho usato MPI\_reduce per agevolare le operazioni di somma. 
 In questo caso ho preferito codice piu semplice al definire una operazione di reduce custom, 
 che permette efficienza migliore rispetto all' usare direttamente primitive di livello più basso.
 
-\section{Conclusioni}
+\section*{Conclusioni}
 La differenza principale tra il programma MPI e il programma OpenMP è la mancanza di dynamic scheduling nella versione MPI. 
 Questo si traduce in performance peggiori nella versione MPI, dato che il workload è sbilanciato.
 Per ottimizzare meglio il programma, si potrebbe cercare di rimuovere la loop-carried dependency, o approssimare un'euristica per cui il workload è meglio bilanciato. 
@@ -42,5 +41,7 @@ Un'altra possibile ottimizzazione è aumentare la cache locality iterando sui di
 Questo consente al programma di dover tenere nella cache solo il displacement corrente, effettivamente raddoppiando il numero di displacement nella cache.
 Ho inoltre notato che il numero di intersezioni non sono esattamente uguali tra versione parallellizzata e seriale, ma differiscono di circa lo 0.5\% alla ventesima iterazione. Dopo una sessione di debugging,
 credo che questo sia dovuto al fatto che i float che rappresentano i displacement vengono sommati in un ordine diverso, dando origine così a risultati leggermente inconsistenti.
+\printbibliography
+\appendix
 
 \end{document}
