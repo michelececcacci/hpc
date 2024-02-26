@@ -131,12 +131,13 @@ I tempi sono misurati in secondi.
 \newline
 La ragione per cui lo speedup diminuisce nella dodicesima iterazione è che il thread probabilmente viene usato dal sistema operativo.
 \section*{Conclusioni}
+Ho ottenuto uno speedup significativo sia nella versione MPI che nella versione OpenMP.
 La differenza principale tra il programma MPI e il programma OpenMP è la mancanza di dynamic scheduling nella versione MPI.
 Questo si traduce in performance peggiori nella versione MPI, dato che il workload è sbilanciato.
-Per ottimizzare meglio il programma, si potrebbe cercare di rimuovere la loop-carried dependency, o implementare il dynamic scheduling di MPI.
+Per ottimizzare meglio il programma, si potrebbe cercare di rimuovere la loop-carried dependency, o cercare di implementare il dynamic scheduling di OpenMP in MPI.
 Un'altra possibile ottimizzazione è aumentare la cache locality iterando sui displacement x e y separatamente.
 Questo consente al programma di dover tenere nella cache solo il displacement corrente, effettivamente raddoppiando il numero di displacement nella cache.
-Ho inoltre notato che il numero di intersezioni non sono esattamente uguali tra versione parallellizzata e seriale, ma differiscono di circa lo 0.5\% alla ventesima iterazione. 
+Ho inoltre notato che il numero di intersezioni non sono esattamente uguali tra versione parallellizzata e seriale, ma differiscono di circa lo 0.5\% alla ventesima iterazione.
 Dopo una sessione di debugging, credo che questo sia dovuto al fatto che i float che rappresentano i displacement vengono sommati in un ordine diverso, dando origine così a risultati leggermente inconsistenti.
 \printbibliography
 \appendix
