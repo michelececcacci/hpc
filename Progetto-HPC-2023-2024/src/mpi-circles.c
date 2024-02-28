@@ -177,7 +177,9 @@ int compute_forces( void )
 
     for (int i= my_start; i < my_end; i++) {
         n_intersections += compute_forces_nth(i);
-        n_intersections += compute_forces_nth(ncircles-i);
+        if (ncircles-i != i) {
+            n_intersections += compute_forces_nth(ncircles-i);
+        }
     }
     return n_intersections;
 }
