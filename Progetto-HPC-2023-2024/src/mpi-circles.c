@@ -133,6 +133,32 @@ void init_circles(int n)
     reset_displacements();
 }
 
+int compute_forces_nth(int i) {
+    int n_intersections = 0;
+    for (int j=i+1; j < ncircles; j++) {
+        const float deltax = circles[j].x - circles[i].x;
+        const float deltay = circles[j].y - circles[i].y;
+        /* hypotf(x,y) computes sqrtf(x*x + y*y) avoiding
+            overflow. This function is defined in <math.h>, and
+            should be available also on CUDA. In case of troubles,
+            it is ok to use sqrtf(x*x + y*y) instead. */
+        const float dist = hypotf(deltax, deltay);
+        const float Rsum = circles[i].r + circles[j].r;
+        if (dist < Rsum - EPSILON) {
+            n_intersections++;
+            const float overlap = Rsum - dist;
+            assert(overlap > 0.0);
+            // avoid division by zero
+            const float overlap_x = overlap / (dist + EPSILON) * deltax;
+            const float overlap_y = overlap / (dist + EPSILON) * deltay;
+            circles_dx[i] -= overlap_x / K;
+            circles_dy[i] -= overlap_y / K;
+            circles_dx[j] += overlap_x / K;
+            circles_dy[j] += overlap_y / K;
+        }
+    }
+    return n_intersections;
+}
 
 /**
  * Compute the force acting on each circle; returns the number of
@@ -145,32 +171,13 @@ int compute_forces( void )
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 
-    const int my_start = ncircles * my_rank / comm_size;
-    const int my_end = ncircles * (my_rank+1) / comm_size;
+    const int my_start = (ncircles/2) * my_rank / comm_size;
+    const int my_end = (ncircles/2) * (my_rank+1) / comm_size;
     int n_intersections = 0;
+
     for (int i= my_start; i < my_end; i++) {
-        for (int j=i+1; j < ncircles; j++) {
-            const float deltax = circles[j].x - circles[i].x;
-            const float deltay = circles[j].y - circles[i].y;
-            /* hypotf(x,y) computes sqrtf(x*x + y*y) avoiding
-               overflow. This function is defined in <math.h>, and
-               should be available also on CUDA. In case of troubles,
-               it is ok to use sqrtf(x*x + y*y) instead. */
-            const float dist = hypotf(deltax, deltay);
-            const float Rsum = circles[i].r + circles[j].r;
-            if (dist < Rsum - EPSILON) {
-                n_intersections++;
-                const float overlap = Rsum - dist;
-                assert(overlap > 0.0);
-                // avoid division by zero
-                const float overlap_x = overlap / (dist + EPSILON) * deltax;
-                const float overlap_y = overlap / (dist + EPSILON) * deltay;
-                circles_dx[i] -= overlap_x / K;
-                circles_dy[i] -= overlap_y / K;
-                circles_dx[j] += overlap_x / K;
-                circles_dy[j] += overlap_y / K;
-            }
-        }
+        n_intersections += compute_forces_nth(i);
+        n_intersections += compute_forces_nth(ncircles-i);
     }
     return n_intersections;
 }
