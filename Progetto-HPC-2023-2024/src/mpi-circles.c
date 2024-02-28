@@ -254,6 +254,7 @@ int main( int argc, char* argv[] )
 	    dump_circles(0);
 	#endif
     MPI_Bcast(&ncircles, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
     for (int it=0; it<iterations; it++) {
         int overlaps = 0;
         const double tstart_iter = hpc_gettime();
