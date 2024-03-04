@@ -242,6 +242,8 @@ int main( int argc, char* argv[] )
     printf("Elapsed time: %f\n", elapsed_prog);
 
     free(circles);
+    free(circles_dx);
+    free(circles_dy);
 
     return EXIT_SUCCESS;
 }
