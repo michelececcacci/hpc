@@ -171,8 +171,8 @@ int compute_forces( void )
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 
-    const int my_start = (ncircles/2) * my_rank / comm_size;
-    const int my_end = (ncircles/2) * (my_rank+1) / comm_size;
+    const int my_start = (ncircles+1)/2 * my_rank / comm_size;
+    const int my_end = (ncircles+1)/2 * (my_rank+1) / comm_size;
     int n_intersections = 0;
 
     for (int i= my_start; i < my_end; i++) {
