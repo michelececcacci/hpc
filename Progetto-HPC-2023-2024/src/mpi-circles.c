@@ -264,14 +264,12 @@ int main( int argc, char* argv[] )
 	#endif
     MPI_Bcast(&ncircles, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    assertNoErrors(MPI_Bcast(circles_dx, ncircles, MPI_FLOAT, 0, MPI_COMM_WORLD));
+    assertNoErrors(MPI_Bcast(circles_dy, ncircles, MPI_FLOAT, 0, MPI_COMM_WORLD));
     for (int it=0; it<iterations; it++) {
         int overlaps = 0;
         const double tstart_iter = hpc_gettime();
-        if (my_rank == 0) {
-            reset_displacements();
-        }
-        assertNoErrors(MPI_Bcast(circles_dx, ncircles, MPI_FLOAT, 0, MPI_COMM_WORLD));
-        assertNoErrors(MPI_Bcast(circles_dy, ncircles, MPI_FLOAT, 0, MPI_COMM_WORLD));
+        reset_displacements();
         assertNoErrors(MPI_Bcast(circles, ncircles, MPI_CIRCLES, 0, MPI_COMM_WORLD));
         int n_overlaps = compute_forces();
         assertNoErrors(MPI_Reduce(&n_overlaps, &overlaps, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD));
