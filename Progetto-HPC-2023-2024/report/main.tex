@@ -41,7 +41,7 @@ Dato che il carico è bilanciato dinamicamente, ogni thread prende una frazione 
 e le performance in weak scaling sono molto buone.
 \begin{figure}
     \includegraphics[scale=0.5]{images/omp_weak.png}
-    \caption[]{Le performance in weak scaling sono molto buone}
+    \caption[]{Le performance in weak scaling sono molto buone, rimanendo sempre vicine a 1}
 \end{figure}
 \section*{Versione MPI}
 Usando \textbf{MPI}, dato che ogni processo ha bisogno di ricevere un' array aggiornato con tutte le informazioni rilevanti ai cerchi, 
@@ -59,15 +59,15 @@ Inoltre, ho deciso di usare la funzione reset\_displacement direttamente al post
 Questo consente di limitare le comunicazioni inter-process necessarie.
 \begin{figure}
     \includegraphics[scale=0.5]{images/mpi_speedup.png}
-    \caption[]{Lo speedup rimane molto vicino a lineare con un numero di processi minore o uguale a 10}
+    \caption[]{Lo speedup rimane molto vicino a lineare con un numero di processi minore o uguale a 10, per poi calare con 11 e 12 processi}
 \end{figure}
 \begin{figure}
     \includegraphics[scale=0.5]{images/mpi_strong.png}
-    \caption[short]{title}
+    \caption[short]{La performance in strong scaling rimane vicino a 1 fino a quando si usano 10 processi, e cala fino a 0.8 con 12 processi}
 \end{figure}
 \begin{figure}
     \includegraphics[scale=0.5]{images/mpi_weak.png}
-    \caption[short]{title} 
+    \caption[short]{La performance in weak scaling rimane vicino a 1 fino a quando si usano 10 processi, e cala fino a 0.8 con 12 processi} 
 \end{figure}
 \newline
 La ragione per cui lo speedup diminuisce nella dodicesima iterazione è che il thread probabilmente viene usato dal sistema operativo.
