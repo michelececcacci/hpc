@@ -20,12 +20,11 @@ Infatti, dato che i thread condividono lo stesso address space, questo potrebbe 
 L' approccio usato per entrambi i programmi paralleli è stato quello di cercare di ottenere codice corretto,e poi parallellizzarlo e guadagnare più performance possibile.
 L' unica funzione che presenta loop-carried dependencies nel codice seriale è \textit{move\_circles}.
 \subsection*{Versione OpenMP}
-Parallelizzato usando \textbf{openMP}.
-Ho deciso di estrarre i delta x e y nella struttura circle in array separati, così da poterli usare insieme alla primitiva \textit{OpenMP reduce}.
+Ho deciso di estrarre i delta x e y nella struttura circle in array separati, così da poterli usare insieme alla primitiva OpenMP reduce.
 Nella funzione reduce\_forces, ho parallellizzato solo il loop esterno, che non presenta nessuna loop-carried dependency.
 Dato che il workload è molto sbilanciato e le performance non erano ottimali, ho poi deciso di usare scheduling dinamico.
-Ho usato il costrutto openMP parallel for, e ho definito le variabili con default(none), in maniera da dover pensare al significato di ogni singola variabile e non lasciare ambiguità nel mio codice.
-Ho definito variabili che non vengono modificate come shared per evitare copie inutili.
+Ho usato il costrutto openMP parallel for, e ho definito le variabili con \textit{default(none)}, in maniera da dover pensare al significato di ogni singola variabile e non lasciare ambiguità nel mio codice.
+Ho definito variabili che non vengono modificate come \textit{shared} per evitare copie inutili.
 Inoltre ho sempre usato il costrutto reduce di openMP per computare le somme sia degli offset che della variabile che rappresenta il numero di sovrapposizioni.
 Questo mi ha consentito di evitare race condition, e di rendere il mio codice più semplice senza impattare in alcun modo la performance.
 \begin{figure}
@@ -46,17 +45,18 @@ e le performance in weak scaling sono molto buone.
 \section*{Versione MPI}
 Usando \textbf{MPI}, dato che ogni processo ha bisogno di ricevere un' array aggiornato con tutte le informazioni rilevanti ai cerchi, 
 ho dovuto definire un nuovo data type circle, che ho potuto usare per inviare direttamente le informazioni. 
-Questo mi consente di ridurre il numero di \textbf{MPI\_Bcast} necessarie ad ogni iterazione.
-Dato che a ogni processo servono le informazioni presenti in tutto l' array, e non solo una porzione, ho usato \textbf{MPI\_Bcast} per facilitare l' invio e non duplicare lavoro,
-che sarebbe successo se avessi scelto di usare \textbf{MPI\_send} o  \textbf{MPI\_recv}.
-Dopo aver calcolato i nuovi displacement sull'asse x e y, ho usato \textbf{MPI\_reduce}. 
-In questo caso ho preferito codice piu semplice al definire una operazione di reduce custom,
+Questo mi consente di ridurre il numero di MPI\_Bcast necessarie ad ogni iterazione.
+Dato che a ogni processo servono le informazioni presenti in tutto l' array, e non solo una porzione, ho usato MPI\_Bcast per facilitare l' invio e non duplicare lavoro,
+che sarebbe successo se avessi scelto di usare MPI\_send o  MPI\_recv.
+Dopo aver calcolato i nuovi displacement sull'asse x e y, ho usato MPI\_reduce.
+In questo caso ho preferito codice più semplice al definire una operazione di reduce custom,
 che permette efficienza migliore rispetto all' usare direttamente primitive di livello più basso.
 Per bilanciare il carico, ho modularizzato il codice e fatto in modo che lo stesso thread che calcola i displacement per il cerchio $i$ lo calcoli anche per il cerchio $n-i$.
-Questo risulta nel fatto che a ogni iterazione $i$ del ciclo da $0$ a $\frac{n}{2}$, il lavoro fatto rimane costante, dato che il lavoro fatto a ogni iterazione è $i + (n-i) = n$.
+Questo risulta nel fatto che a ogni iterazione $i$ del ciclo da $0$ a $\lceil \frac{n}{2} \rceil$, il lavoro fatto rimane costante, dato che il lavoro fatto a ogni iterazione è $i + (n-i) = n$.
+Inoltre controllo anche che $n$ sia diverso da $n-i$, per evitare il caso di un numero di cerchi dispari in cui il numero che altrimenti non sarebbe stato contato venga contato 2 volte.
 A questo punto, se un processo itera sullo stesso numero di coppie di cerchi, allora compie lo stesso lavoro di un altro, qualunque sia il suo indice $i$.
 Inoltre, ho deciso di usare la funzione reset\_displacement direttamente al posto di mandare il buffer con displacement resettati a 0.
-Questo consente di limitare le comunicazioni inter-process necessarie.
+Questo consente di limitare le comunicazioni inter-process necessarie, e aumenta la porzione di codice parallelizzabile.
 \begin{figure}
     \includegraphics[scale=0.5]{images/mpi_speedup.png}
     \caption[]{Lo speedup rimane molto vicino a lineare con un numero di processi minore o uguale a 10, per poi calare con 11 e 12 processi}
@@ -74,7 +74,7 @@ La ragione per cui lo speedup diminuisce nella dodicesima iterazione è che il t
 \section*{Conclusioni}
 Ho ottenuto uno speedup significativo sia nella versione MPI che nella versione OpenMP.
 La differenza principale tra il programma MPI e il programma OpenMP è la mancanza di dynamic scheduling nella versione MPI.
-Questo è stato risolto bilanciando il carico in modo manuale nella versione MPI.
+Questo è stato risolto bilanciando il carico in modo manuale nella versione MPI, come descritto sopra.
 Un'altra possibile ottimizzazione è aumentare la cache locality iterando sui displacement x e y separatamente.
 Questo consente al programma di dover tenere nella cache solo il displacement corrente, effettivamente raddoppiando il numero di displacement nella cache.
 Ho inoltre notato che il numero di intersezioni non sono esattamente uguali tra versione parallellizzata e seriale, ma differiscono di circa lo 0.5\% alla ventesima iterazione.
