@@ -3,6 +3,7 @@
 \usepackage{graphicx}
 \usepackage{caption}
 \usepackage[]{newfloat}
+\usepackage[]{float}
 
 \begin{document}
 
@@ -30,18 +31,18 @@ Questo mi ha permesso di pensare significato di ogni singola variabile e non las
 Ho definito variabili che non vengono modificate come \textit{shared} per evitare copie inutili.
 Inoltre ho sempre usato il costrutto reduce di openMP per computare le somme sia degli offset che della variabile che rappresenta il numero di sovrapposizioni.
 Questo mi ha consentito di evitare race condition, e di rendere il mio codice più semplice senza impattare in alcun modo la performance.
-\begin{figure}
+\begin{figure}[H]
     \includegraphics[scale=0.5]{images/omp_speedup.png}
     \caption[]{Lo speedup misurato del programma \textit{omp\_circles} è quasi lineare}
 \end{figure}
-\begin{figure}
+\begin{figure}[H]
     \includegraphics[scale=0.5]{images/omp_strong.png}
     \caption[]{La strong scaling efficiency rimane vicina a 1 con numero di thread minore o uguale a 10 per poi diminuire leggermente}
 \end{figure}
 La ragione per cui lo speedup diminuisce nella dodicesima iterazione è che il thread probabilmente viene usato dal sistema operativo.
 Dato che il carico è bilanciato dinamicamente, ogni thread prende una frazione del lavoro uguale agli altri,
 e le performance in weak scaling sono molto buone.
-\begin{figure}
+\begin{figure}[H]
     \includegraphics[scale=0.5]{images/omp_weak.png}
     \caption[]{Le performance in weak scaling sono molto buone, rimanendo sempre vicine a 1}
 \end{figure}
@@ -61,20 +62,21 @@ Inoltre controllo anche che $n$ sia diverso da $n-i$, per evitare il caso di un 
 A questo punto, se un processo itera sullo stesso numero di coppie di cerchi, allora compie lo stesso lavoro di un altro, qualunque sia il suo indice $i$.
 Inoltre, ho deciso di usare la funzione reset\_displacement direttamente al posto di mandare il buffer con displacement resettati a 0.
 Questo consente di limitare il numero di comunicazioni tra processi necessarie, e aumenta la porzione di codice parallelizzabile.
-\begin{figure}
+Ho anche deciso di mandare i raggi dei cerchi solo una volta, dato che la loro dimensione non cambia.
+Questo consente di ridurre la dimensione del payload mandato del 33\%.
+\begin{figure}[H]
     \includegraphics[scale=0.5]{images/mpi_speedup.png}
     \caption[]{Lo speedup rimane molto vicino a lineare con un numero di processi minore o uguale a 10, per poi calare con 11 e 12 processi}
 \end{figure}
-\begin{figure}
+\begin{figure}[H]
     \includegraphics[scale=0.5]{images/mpi_strong.png}
     \caption[short]{La performance in strong scaling rimane vicino a 1 fino a quando si usano 10 processi, e cala fino a 0.8 con 12 processi}
 \end{figure}
-\begin{figure}
+\begin{figure}[H]
     \includegraphics[scale=0.5]{images/mpi_weak.png}
     \caption[short]{La performance in weak scaling rimane vicino a 1 fino a quando si usano 10 processi, e cala fino a 0.8 con 12 processi}
 \end{figure}
-\newline
-La ragione per cui lo speedup diminuisce nella dodicesima iterazione è che il thread probabilmente viene usato dal sistema operativo.
+La ragione per cui lo speedup diminuisce significativamente nella dodicesima iterazione è che il processo probabilmente viene anche usato dal sistema operativo.
 \section*{Conclusioni}
 Ho ottenuto uno speedup significativo sia nella versione MPI che nella versione OpenMP.
 La differenza principale tra il programma MPI e il programma OpenMP è la mancanza di dynamic scheduling nella versione MPI.
