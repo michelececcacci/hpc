@@ -67,7 +67,6 @@ and then assembled to produce the movie `circles.avi`:
 
 typedef struct {
     float x, y;   /* coordinates of center */
-    float r;      /* radius */
 } circle_t;
 
 /* These constants can be replaced with #define's if necessary */
@@ -84,6 +83,7 @@ int ncircles;
 circle_t *circles = NULL;
 float *circles_dx = NULL;
 float *circles_dy = NULL;
+float *circles_r = NULL;
 float *recvbuf_dx = NULL;
 float *recvbuf_dy = NULL;
 
@@ -120,6 +120,7 @@ void init_circles(int n)
     circles_dy = (float*)malloc(n * sizeof(float));
     recvbuf_dx = malloc(n*sizeof(float));
     recvbuf_dy = malloc(n*sizeof(float));
+    circles_r = malloc(n*sizeof(float));
     assert(recvbuf_dx != NULL);
     assert(recvbuf_dy != NULL);
     assert(circles != NULL);
@@ -128,7 +129,7 @@ void init_circles(int n)
     for (int i=0; i<n; i++) {
         circles[i].x = randab(XMIN, XMAX);
         circles[i].y = randab(YMIN, YMAX);
-        circles[i].r = randab(RMIN, RMAX);
+        circles_r[i] = randab(RMIN, RMAX);
     }
     reset_displacements();
 }
@@ -143,7 +144,7 @@ int compute_forces_nth(int i) {
             should be available also on CUDA. In case of troubles,
             it is ok to use sqrtf(x*x + y*y) instead. */
         const float dist = hypotf(deltax, deltay);
-        const float Rsum = circles[i].r + circles[j].r;
+        const float Rsum = circles_r[i] + circles_r[j];
         if (dist < Rsum - EPSILON) {
             n_intersections++;
             const float overlap = Rsum - dist;
@@ -241,7 +242,7 @@ int main( int argc, char* argv[] )
     MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Datatype MPI_CIRCLES;
-    assertNoErrors(MPI_Type_contiguous(3, MPI_FLOAT, &MPI_CIRCLES));
+    assertNoErrors(MPI_Type_contiguous(2, MPI_FLOAT, &MPI_CIRCLES));
     assertNoErrors(MPI_Type_commit(&MPI_CIRCLES));
 
     if ( argc > 3 ) {
