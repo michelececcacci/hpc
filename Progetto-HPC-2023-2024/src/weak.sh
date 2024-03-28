@@ -19,9 +19,8 @@
 # di lavoro per thread resti costante.
 
 
-# Ultimo aggiornamento 2023-01-31
 # Moreno Marzolla (moreno.marzolla@unibo.it)
-# Marco Galeri (marco.galeri@studio.unibo.it)
+# Michele Ceccacci (michele.ceccacci@studio.unibo.it)
 
 PROG=$1
 REP=$2

@@ -19,6 +19,8 @@ REP=$2
 PROB_SIZE=$3 # problem size 
 IT=$4 # problem iterations
 
+# Moreno Marzolla (moreno.marzolla@unibo.it)
+# Michele Ceccacci (michele.ceccacci@studio.unibo.it)
 
 if [ ! -f "$PROG" ]; then
     echo
