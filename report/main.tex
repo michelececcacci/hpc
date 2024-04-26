@@ -50,14 +50,14 @@ Questo datatype contiene le coordinate x, y, e il raggio r del cerchio. %todo ca
 Questo mi consente di ridurre il numero di MPI\_Bcast necessarie ad ogni iterazione.
 Dato che a ogni processo servono le informazioni presenti in tutto l' array, e non solo una porzione, ho usato MPI\_Bcast per facilitare l' invio e non duplicare lavoro,
 che sarebbe successo se avessi scelto di usare MPI\_send o  MPI\_recv.
-Dopo aver calcolato i nuovi displacement sull'asse x e y, ho usato MPI\_reduce.
+Dopo aver calcolato i nuovi spostamenti sull'asse x e y, ho usato MPI\_reduce.
 In questo caso ho preferito codice più semplice al definire una operazione di reduce custom,
 che permette efficienza migliore rispetto all' usare direttamente primitive di livello più basso.
-Per bilanciare il carico, ho modularizzato il codice e fatto in modo che lo stesso thread che calcola i displacement per il cerchio $i$ lo calcoli anche per il cerchio $n-i$.
+Per bilanciare il carico, ho modularizzato il codice e fatto in modo che lo stesso thread che calcola gli spostamenti per il cerchio $i$ lo calcoli anche per il cerchio $n-i$.
 Questo risulta nel fatto che a ogni iterazione $i$ del ciclo da $0$ a $\lceil \frac{n}{2} \rceil$, il lavoro fatto rimane costante, dato che il lavoro fatto a ogni iterazione è $i + (n-i) = n$.
 Inoltre controllo anche che $n$ sia diverso da $n-i$, per evitare che $n/2$ venga contato due volte nel caso di $n$ dispari.
 A questo punto, se un processo itera sullo stesso numero di coppie di cerchi, allora compie lo stesso lavoro di un altro, qualunque sia il suo indice $i$.
-Inoltre, ho deciso di usare la funzione reset\_displacement direttamente al posto di mandare il buffer con displacement resettati a 0.
+Inoltre, ho deciso di usare la funzione reset\_displacement direttamente al posto di mandare il buffer con gli spostamenti resettati a 0.
 Questo consente di limitare il numero di comunicazioni tra processi necessarie, e aumenta la porzione di codice parallelizzabile.
 Ho anche deciso di mandare i raggi dei cerchi solo una volta, dato che la loro dimensione non cambia.
 Questo consente di ridurre la dimensione del payload mandato del 33\%, ma non ho visto notevoli differenze nelle misurazioni.
@@ -78,10 +78,10 @@ La ragione per cui lo speedup diminuisce significativamente nella dodicesima ite
 Ho ottenuto uno speedup significativo sia nella versione MPI che nella versione OpenMP.
 La differenza principale tra il programma MPI e il programma OpenMP è la mancanza di scheduling dinamico nella versione MPI.
 Questo è stato risolto bilanciando il carico in modo manuale nella versione MPI, come descritto in precedenza.
-Un'altra possibile ottimizzazione è aumentare la cache locality iterando sui displacement x e y separatamente.
-Questo consente al programma di dover tenere nella cache solo il displacement corrente, effettivamente raddoppiando il numero di displacement nella cache.
+Un'altra possibile ottimizzazione è aumentare la cache locality iterando sugli spostamenti x e y separatamente.
+Questo consente al programma di dover tenere nella cache solo lo spostamento corrente, effettivamente raddoppiando il numero di spostamenti nella cache.
 Ho deciso di non usare questa ottimizzazione, dato che il limite principale del codice OpenMP sembra comunque la comunicazione tra processi.
 Ho inoltre notato che il numero di intersezioni non sono esattamente uguali tra versione parallellizzata e seriale, ma differiscono di circa lo 0.5\% alla ventesima iterazione.
-Dopo una sessione di debugging, credo che questo sia dovuto al fatto che i float che rappresentano i displacement vengono sommati in un ordine diverso, dando origine così a risultati leggermente inconsistenti.
+Dopo una sessione di debugging, credo che questo sia dovuto al fatto che i float che rappresentano gli spostamenti vengono sommati in un ordine diverso, dando origine così a risultati leggermente inconsistenti.
 In conclusione, la versione OpenMP ha risultati migliori leggermente migliore di quella MPI, ma entrambe riescono a ottenere speedup significativi rispetto alla loro corrispettiva versione seriale.
 \end{document}
