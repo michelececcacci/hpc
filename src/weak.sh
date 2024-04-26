@@ -53,7 +53,7 @@ fi
 for p in `seq $CORES`; do
     echo -n "$p,"
     # Il comando bc non è in grado di valutare direttamente una radice
-    # cubica, che dobbiamo quindi calcolare mediante logaritmo ed
+    # quadrata, che dobbiamo quindi calcolare mediante logaritmo ed
     # esponenziale. L'espressione ($N0 * e(l($p)/2)) calcola
     # $N0*($p^(1/2))
     
