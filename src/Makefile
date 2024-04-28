@@ -20,6 +20,7 @@ OMP_EXE:=omp-$(EXE)
 MPI_EXE:=mpi-$(EXE)
 CFLAGS=-std=c99 -Wall -Wpedantic
 LDLIBS+=-lm
+CORES=`cat /proc/cpuinfo | grep processor | wc -l` # number of cores
 
 ALL: $(EXE)
 
@@ -30,13 +31,31 @@ $(EXE).movie: $(EXE).c
 $(OMP_EXE): $(OMP_EXE).c
 	$(CC) $(OMP_EXE).c -fopenmp $(CFLAGS) $(LDLIBS) -o $(OMP_EXE)
 
+$(OMP_EXE).movie: CFLAGS+=-DMOVIE
+$(OMP_EXE).movie: $(OMP_EXE).c
+	$(CC) $(CFLAGS) -fopenmp $< -o $@ $(LDLIBS)
+
 $(MPI_EXE): $(MPI_EXE).c
 	mpicc $(MPI_EXE).c $(CFLAGS) $(LDLIBS) -o $(MPI_EXE)
+
+$(MPI_EXE).movie: CFLAGS+=-DMOVIE
+$(MPI_EXE).movie: $(MPI_EXE).c
+	mpicc $(MPI_EXE).c $(CFLAGS) $(LDLIBS) -o $(MPI_EXE).movie
 
 movie: $(EXE).movie
 	./$(EXE).movie 200 500
 	for f in *.gp; do echo "Processing $$f"; gnuplot "$$f"; done
 	ffmpeg -y -i "circles-%05d.png" -vcodec mpeg4 circles.avi
 
+OMP_movie: $(OMP_EXE).movie
+	./$(OMP_EXE).movie 200 500
+	for f in *.gp; do echo "Processing $$f"; gnuplot "$$f"; done
+	ffmpeg -y -i "circles-%05d.png" -vcodec mpeg4 omp_circles.avi
+
+MPI_movie: $(MPI_EXE).movie
+	mpirun -n $(CORES) ./$(MPI_EXE).movie 200 500
+	for f in *.gp; do echo "Processing $$f"; gnuplot "$$f"; done
+	ffmpeg -y -i "circles-%05d.png" -vcodec mpeg4 mpi_circles.avi
+
 clean:
-	\rm -f $(EXE) $(EXE).movie *.o *~ *.gp *.png *.avi $(OMP_EXE)
+	\rm -f $(EXE) $(EXE).movie *.o *~ *.gp *.png *.avi $(OMP_EXE) $(MPI_EXE) *.movie

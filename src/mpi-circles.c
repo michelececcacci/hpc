@@ -165,7 +165,7 @@ void dump_circles( int iterno )
     fprintf(out, "set size square\n");
     fprintf(out, "plot '-' with circles notitle\n");
     for (int i=0; i<ncircles; i++) {
-        fprintf(out, "%f %f %f\n", circles[i].x, circles[i].y, circles[i].r);
+        fprintf(out, "%f %f %f\n", circles[i].x, circles[i].y, circles_r[i]);
     }
     fprintf(out, "e\n");
     fclose(out);
